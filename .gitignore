@@ -1,2 +1,16 @@
-.idea
-.venv
+
+# from pycharm
+.idea/
+
+# from vscode
+.vscode/
+
+
+# environments
+.venv/
+venv/
+env/
+
+# python cache files
+*.pyc
+__pycache__/
