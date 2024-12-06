@@ -39,7 +39,7 @@ def delete_flight(con):
         ]
         print(tabulate.tabulate(schedule_data, headers=headers_schedule, tablefmt="grid"))
         ques_pilot = [
-            inquirer.Text('pilot_id', message="Enter the pilot ID")
+            inquirer.Text('pilot_id', message="Enter the pilot Id (PR101, PR102, etc.)")
         ]
         pilot_answers = inquirer.prompt(ques_pilot)
         selected_pilot_id = pilot_answers['pilot_id']
