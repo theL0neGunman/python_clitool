@@ -2,6 +2,7 @@
 import tabulate
 import inquirer
 import sys
+import re
 
 
 def view_predefined(cur, con):
@@ -77,9 +78,14 @@ def view_same_desti(cur):
 
 
 def view_by_dep_date(cur):
-    dep_date = inquirer.prompt([inquirer.Text('dep_date', message="Enter departure date to filter by (YYYY-MM-DD):")])['dep_date']
-    
-    query = """
+    dep_date = inquirer.prompt([inquirer.Text('dep_date', message="Enter departure date to filter by (YYYY-MM-DD)")])['dep_date']
+    date_pattern = r"^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2]\d|3[0-1])$"
+    boolval = re.match(date_pattern, dep_date)
+    if not boolval:
+        print("Enter a valida date format\n")
+        return
+    else:
+        query = """
     SELECT f.flight_id, f.flight_name, p.pilot_id, p.pilot_name, d.destination_id, 
            d.dep_time, d.arr_time, d.dep_date, d.arr_date ,
            d.from_loc, d.to_loc, s.status
@@ -89,13 +95,17 @@ def view_by_dep_date(cur):
     JOIN destination AS d ON f.flight_id = d.flight_id
     WHERE d.dep_date = ?;
     """
-    cur.execute(query, (dep_date,))
-    tabulate_results(cur)
+        cur.execute(query, (dep_date,))
+        tabulate_results(cur)
    
 
 def view_by_arr_date(cur):
-    arr_date = inquirer.prompt([inquirer.Text('arr_date', message="Enter arrival date to filter by (YYYY-MM-DD):")])['arr_date']
-    
+    arr_date = inquirer.prompt([inquirer.Text('arr_date', message="Enter arrival date to filter by (YYYY-MM-DD)")])['arr_date']
+    date_pattern = r"^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[1-2]\d|3[0-1])$"
+    boolval = re.match(date_pattern, arr_date)
+    if not boolval:
+        print("Enter a valida date format\n")
+        return
     query = """
     SELECT f.flight_id, f.flight_name, p.pilot_id, p.pilot_name, d.destination_id, 
            d.dep_time, d.arr_time, d.dep_date, d.arr_date,
@@ -111,8 +121,11 @@ def view_by_arr_date(cur):
    
 
 def view_by_dep_time(cur):
-    dep_time = inquirer.prompt([inquirer.Text('dep_time', message="Enter departure time to filter by (HH:MM):")])['dep_time']
-    
+    dep_time = inquirer.prompt([inquirer.Text('dep_time', message="Enter departure time to filter by (HH:MM)")])['dep_time']
+    time_pattern = r"^(0[1-9]|1[0-2]):[0-5][0-9]\s?(am|pm)$"
+    if not re.match(time_pattern, dep_time):
+        print("Enter a valid time format\n")
+        return
     query = """
     SELECT f.flight_id, f.flight_name, p.pilot_id, p.pilot_name, d.destination_id, 
            d.dep_time, d.arr_time, d.dep_date, d.arr_date,
@@ -127,8 +140,11 @@ def view_by_dep_time(cur):
     tabulate_results(cur)
 
 def view_by_arr_time(cur):
-    arr_time = inquirer.prompt([inquirer.Text('arr_time', message="Enter arrival time to filter by (HH:MM):")])['arr_time']
-    
+    arr_time = inquirer.prompt([inquirer.Text('arr_time', message="Enter arrival time to filter by (HH:MM)")])['arr_time']
+    time_pattern = r"^(0[1-9]|1[0-2]):[0-5][0-9]\s?(am|pm)$"
+    if not re.match(time_pattern, arr_time):
+        print("Enter a valid time format\n")
+        return
     query = """
     SELECT f.flight_id, f.flight_name, p.pilot_id, p.pilot_name, d.destination_id, 
            d.dep_time, d.arr_time, d.dep_date, d.arr_date,
@@ -144,8 +160,10 @@ def view_by_arr_time(cur):
     
 
 def view_by_status(cur):
-    status = inquirer.prompt([inquirer.Text('status', message="Enter status to filter by:")])['status']
-    
+    status = inquirer.prompt([inquirer.Text('status', message="Enter status to filter by (DELAYED, ACTIVE, CANCELLED)")])['status']
+    if status not in ['DELAYED', 'ACTIVE', 'CANCELLED']:
+        print("Enter the status according to the format")
+        return
     query = """
     SELECT f.flight_id, f.flight_name, p.pilot_id, p.pilot_name, d.destination_id, 
            d.dep_time, d.arr_time, d.dep_date, d.arr_date,
@@ -161,8 +179,11 @@ def view_by_status(cur):
     
 
 def view_by_pilot_id(cur):
-    pilot_id = inquirer.prompt([inquirer.Text('pilot_id', message="Enter pilot ID to view flights:")])['pilot_id']
-    
+    pilot_id = inquirer.prompt([inquirer.Text('pilot_id', message="Enter pilot ID to view flights (PR101,PR102, etc.)")])['pilot_id']
+    pilot_id_pattern = r"^PR(10[1-9]|1[1-9][0-9]|[2-9][0-9]{2,})$"
+    if not re.match(pilot_id_pattern, pilot_id):
+        print("Pilot id should be in the specified format")
+        return
     query = """
     SELECT f.flight_id, f.flight_name, p.pilot_id, p.pilot_name, d.destination_id, 
            d.dep_time, d.arr_time, d.dep_date, d.arr_date,
@@ -182,12 +203,12 @@ def view_by_pilot_id(cur):
 def view_custom(con, cur):
     cur = con.cursor()
     filter_options = [
-        ("Status", "status"),
+        ("Status (DELAYED, ACTIVE, CANCELLED)", "status"),
         ("From location", "from_loc"),
         ("Destination", "to_loc"),
-        ("Pilot Id", "pilot_id"),
-        ("Arrival Date", "arr_date"),
-        ("Departure Date", "dep_date"),
+        ("Pilot Id (PR101,PR102,PR103,etc.)", "pilot_id"),
+        ("Arrival Date (YYYY-MM-DD)", "arr_date"),
+        ("Departure Date (YYYY-MM-DD)", "dep_date"),
     ]
     
     selected_filters = inquirer.prompt([
