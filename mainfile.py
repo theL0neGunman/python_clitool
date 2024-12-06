@@ -7,16 +7,13 @@ import inquirer
 from pyfiglet import Figlet
 from add_flight import flight_addition
 from view_flights import flight_viewing
-from update_destination import desitnation_updation
 from view_schedule import pilot_schedule
 from update_flight_info import flight_info_updation
-from assign_pilot import assigning_pilot
-from misc_functions import misc_functions
-from update_route import update_existing_route
+from delete_func import delete_flight
 
 app = typer.Typer()
 
-file_db ="planesdb.db"
+file_db ="flightdata.db"
 
 def mainHeading():
     fig_font = Figlet(font="cosmic")
@@ -27,9 +24,8 @@ def mainHeading():
 
 def showMenu():
     choices_arr = [("Add a flight","a"), ("View Flights by...","b"),
-                    ("Add a new route from existing flights", "c"),
-                      ("Update flight info","d"),("Assign a Pilot to a flight", "e"),
-                      ("View Pilot Schedule", "f"), ("Update Destination", "g"),("Miscellaneous", "h"), ("Exit Application", "i")]
+                      ("Update flight info","c"),
+                      ("View Pilot Schedule", "d"), ("Delete a flight route", "e")("Exit Application", "f")]
     menu_options = [
         inquirer.List("option",
              message="Welcome to Vistara Airlines database, what would you like to do?",
@@ -54,18 +50,12 @@ def main():
         elif option == "b":
             flight_viewing(db_connect)
         elif option == 'c':
-            update_existing_route(db_connect)
-        elif option == "d":
             flight_info_updation(db_connect)
-        elif option == "e":
-            assigning_pilot(db_connect)
-        elif option == "f":
+        elif option == "d":
             pilot_schedule(db_connect)
-        elif option == "g":
-            desitnation_updation(db_connect)
-        elif option == "h":
-            misc_functions()
-        elif option == "i":
+        elif option == 'e':
+            delete_flight(db_connect)
+        elif option == "f":
             print("No selection made. Exiting...")
             db_connect.close()
             sys.exit(0)

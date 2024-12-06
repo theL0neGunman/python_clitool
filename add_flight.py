@@ -72,8 +72,8 @@ def get_schedule_id(cur):
     
 
 
-def write_in_db(option_a, tables, con, cur, flight_id, flight_name, destination_id,time,
-                date, from_location, to_location,pilot_id, pilot_name):
+def write_in_db(option_a,status, tables, con, cur, flight_id, flight_name, destination_id,dep_time, arr_time,dep_date,
+                arr_date, from_location, to_location,pilot_id, pilot_name):
     for table in tables:
         if table == 'flight':
             query = "INSERT INTO flight (flight_id, flight_name) VALUES (?, ?);"
@@ -82,20 +82,39 @@ def write_in_db(option_a, tables, con, cur, flight_id, flight_name, destination_
                 query = "INSERT INTO pilot (pilot_id, pilot_name) VALUES (?, ?);"
                 cur.execute(query, (pilot_id, pilot_name))
         elif table == 'destination':
-                query = """INSERT INTO destination (flight_id, destination_id, time, date, from_location, to_location) 
-                        VALUES (?, ? , ?, ?, ?, ?);
+                query = """INSERT INTO destination (flight_id, destination_id,dep_time ,arr_time,dep_date ,arr_date, 
+                            from_loc, to_loc) VALUES (?, ? , ?, ?, ?, ?,?, ?);
                          """ 
-                cur.execute(query, (flight_id, destination_id, time, date, from_location, to_location))
+                cur.execute(query, (flight_id, destination_id,dep_time ,arr_time,dep_date ,arr_date, from_location, to_location))
         elif table == 'schedule':
                 schedule_id = get_schedule_id(cur)
                 print(f"Schedule id: {schedule_id}")
-                query = "INSERT INTO schedule (schedule_id, flight_id, destination_id, pilot_id) VALUES (?, ?, ?, ?)"
-                cur.execute(query, (schedule_id, flight_id, destination_id, pilot_id))
+                query = "INSERT INTO schedule (schedule_id, flight_id, destination_id, pilot_id, status) VALUES (?, ?, ?, ?, ?)"
+                cur.execute(query, (schedule_id, flight_id, destination_id, pilot_id, status))
     
     con.commit()
     print("Data successfully added to the table")
     
-            
+         
+def get_inq_opts(option_a):
+    ques = [
+                inquirer.Text('flight_id', message="Enter a new Flight Id (format: VR101)",),
+                inquirer.Text('flight_name', message="Enter the flight name"),
+                inquirer.Text('destination_id', message="Enter a new Route Id (format: UK1001)",),
+                inquirer.Text('dep_time', message="Enter the departure time in (format: HH:MM am/pm)"),
+                inquirer.Text('arr_time', message="Enter the arrival time in (format: HH:MM am/pm)"),
+                inquirer.Text('dep_date', message="Enter the departure date in (format:YYYY-MM-DD)",),
+                inquirer.Text('arr_date', message="Enter the arrival date in (format:YYYY-MM-DD)",),
+                inquirer.Text('from_loc', message="Enter from location"),
+                inquirer.Text('to_loc', message="Enter to location",),
+                inquirer.Text('status', message='Enter flight status either ACTIVE, CANCELLED OR DELAYED (case sensitive)')
+                 ]
+    if not option_a:
+        ques.append([inquirer.Text('pilot_id', message="Enter a new Pilot id (format:PR101)",),
+                inquirer.Text('pilot_name', message="Enter the Pilot name"),])
+    return ques
+    
+
 def create_along_with_route(con):
     cur = con.cursor()
     choices_arr = [("Choose pilots from pre-existing list","a"),
@@ -121,15 +140,7 @@ def create_along_with_route(con):
             if selec_pilots:
                 selected_pilot_name = selec_pilots['selected_name']
                 selected_pilot_id = pilot_dict[selected_pilot_name]
-                ques = [
-                inquirer.Text('flight_id', message="Enter a new Flight Id",),
-                inquirer.Text('flight_name', message="Enter the flight name"),
-                inquirer.Text('destination_id', message="Enter a new Route Id",),
-                inquirer.Text('time', message="Enter the time in format HH:MM AM/PM"),
-                inquirer.Text('date', message="Enter the date in YYYY-MM-DD format",),
-                inquirer.Text('from_location', message="Enter the location from where the flight should take place"),
-                inquirer.Text('to_location', message="Enter the flight destination",),
-                 ]
+                ques = get_inq_opts(True)
                 
             answers = inquirer.prompt(ques)
             is_not_empty, error_name = check_if_is_empty(answers, error_name)
@@ -141,20 +152,24 @@ def create_along_with_route(con):
                 flight_id = answers["flight_id"]
                 flight_name = answers["flight_name"]
                 destination_id = answers ["destination_id"]
-                time = answers["time"]
-                date = answers["date"]
-                from_location = answers["from_location"]
-                to_location = answers["to_location"]
+                dep_time = answers["dep_time"]
+                arr_time = answers["dep_time"]
+                dep_date = answers["dep_date"]
+                status = answers["status"]
+                arr_date = answers["arr_date"]
+                from_location = answers["from_loc"]
+                to_location = answers["to_loc"]
                 is_valid, sub_errname = flight_table_validation(flight_id, flight_name, is_valid, sub_errname, flight_ids)
-                is_valid, sub_errname = destination_table_validation(destination_id,time, date, destination_ids, is_valid, sub_errname)
+                is_valid, sub_errname = destination_table_validation(destination_id,dep_time, arr_time,dep_date,arr_date,
+                                                                     destination_ids, is_valid, sub_errname)
 
                 if not is_valid:
                     print(f"{sub_errname}")
                 else:
                     try:
                         tables = ['flight', 'destination', 'schedule']
-                        write_in_db(True, tables, con, cur, flight_id, flight_name, destination_id,time,
-                                    date, from_location, to_location, selected_pilot_id)
+                        write_in_db(True, status ,tables, con, cur, flight_id, flight_name, destination_id,dep_time, arr_time,dep_date,arr_date,
+                                    from_location, to_location, selected_pilot_id)
                         break
                     except sqlite3.Error as e:
                         print(f"Error in writng data to the table: {e}")
@@ -164,17 +179,7 @@ def create_along_with_route(con):
         elif selected_optn == 'b':
             error_name = ''
             is_not_empty = False
-            ques = [
-                inquirer.Text('flight_id', message="Enter a new Flight Id",),
-                inquirer.Text('flight_name', message="Enter the flight name"),
-                inquirer.Text('pilot_id', message="Enter a new Pilot id",),
-                inquirer.Text('pilot_name', message="Enter the Pilot name"),
-                inquirer.Text('destination_id', message="Enter a new Route Id",),
-                inquirer.Text('time', message="Enter the time in format HH:MM AM/PM"),
-                inquirer.Text('date', message="Enter the date in YYYY-MM-DD format",),
-                inquirer.Text('from_location', message="Enter the location from where the flight should take place"),
-                inquirer.Text('to_location', message="Enter the flight destination",),
-                 ]
+            ques = get_inq_opts(False)
             answers = inquirer.prompt(ques)
             is_not_empty, error_name = check_if_is_empty(answers, error_name)
             if not is_not_empty:
@@ -188,20 +193,24 @@ def create_along_with_route(con):
                 pilot_id = answers["pilot_id"]
                 pilot_name = answers["pilot_name"]
                 destination_id = answers ["destination_id"]
-                time = answers["time"]
-                date = answers["date"]
-                from_location = answers["from_location"]
-                to_location = answers["to_location"]
+                dep_time = answers["dep_time"]
+                arr_time = answers["dep_time"]
+                status = answers["status"]
+                dep_date = answers["dep_date"]
+                arr_date = answers["arr_date"]
+                from_location = answers["from_loc"]
+                to_location = answers["to_loc"]
                 is_valid, sub_errname = flight_table_validation(flight_id, flight_name, is_valid, sub_errname, flight_ids)
                 is_valid, sub_errname = pilot_table_validation(pilot_id, pilot_name, is_valid, sub_errname, pilot_ids)
-                is_valid, sub_errname = destination_table_validation(destination_id,time, date, destination_ids, is_valid, sub_errname)
+                is_valid, sub_errname = destination_table_validation(destination_id,dep_time, arr_time,dep_date,arr_date,
+                                                                     destination_ids, is_valid, sub_errname)
                 if not is_valid:
                     print(f"{sub_errname}")
                 else:
                     try:
                         tables = ['flight', 'pilot', 'destination', 'schedule']
-                        write_in_db(False, tables, con, cur, flight_id, flight_name, destination_id,time,
-                                    date, from_location, to_location,pilot_id, pilot_name)
+                        write_in_db(False, status,tables, con, cur, flight_id, flight_name, destination_id,
+                                    dep_time, arr_time,dep_date,arr_date, from_location, to_location,pilot_id, pilot_name)
                         break
                     except sqlite3.Error as e:
                         print(f"Error in writng data to the table: {e}")
