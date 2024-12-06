@@ -23,9 +23,12 @@ def mainHeading():
 
 
 def showMenu():
-    choices_arr = [("Add a flight","a"), ("View Flights by...","b"),
-                      ("Update flight info","c"),
-                      ("View Pilot Schedule", "d"), ("Delete a flight route", "e")("Exit Application", "f")]
+    choices_arr = [  ("Add a flight", "a"),
+        ("View Flights by...", "b"),
+        ("Update flight info", "c"),
+        ("View Pilot Schedule", "d"),
+        ("Delete a flight route", "e"),
+        ("Exit Application", "f")]
     menu_options = [
         inquirer.List("option",
              message="Welcome to Vistara Airlines database, what would you like to do?",
@@ -42,7 +45,7 @@ def showMenu():
 @app.command()
 def main():
     mainHeading()
-    db_connect = sqlite3.connect("planesdb.db")
+    db_connect = sqlite3.connect(file_db)
     while True:
         option = showMenu()
         if option == "a":
