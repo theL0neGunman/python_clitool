@@ -3,7 +3,7 @@ import inquirer
 import tabulate
 import sys
 import sqlite3
-from utils import get_full_schedule
+import re
 
 def update_dest(cur, con):
     print("Fetching pilot details")
@@ -23,7 +23,10 @@ def update_dest(cur, con):
     ]
     answers = inquirer.prompt(ques)
     selected_pilot_id = answers['pilot_id']
-    print(f"Selected pilot id: {selected_pilot_id}")
+    pilot_id_pattern = r"^PR(10[1-9]|1[1-9][0-9]|[2-9][0-9]{2,})$"
+    if not re.match(pilot_id_pattern, selected_pilot_id):
+        print("Enter the pilot id according to given format")
+        return
     print("Fetching flight data related to pilot...")
     query_flight = """SELECT f.flight_id, f.flight_name, d.to_loc
                     FROM flight AS f
@@ -47,6 +50,10 @@ def update_dest(cur, con):
     
     flight_answers = inquirer.prompt(ques_flight)
     selected_flight_id = flight_answers['flight_id']
+    flight_id_pattern = r"^VR(10[1-9]|1[1-9][0-9]|[2-9][0-9]{2,})$"
+    if not re.match(flight_id_pattern, selected_flight_id):
+        print("Enter the flight id according to given format")
+        return
     new_destination = flight_answers['new_destination']
     print("Updating the destination...")
     query_update_destination = """
@@ -154,10 +161,15 @@ def update_sch(cur, con):
 
         print(tabulate.tabulate(schedule_data, headers=headers_schedule, tablefmt="grid"))
     ques_pilot = [
-            inquirer.Text('pilot_id', message="Enter the pilot ID")
+            inquirer.Text('pilot_id', message="Enter the pilot Id (PR101, PR102, etc.)")
         ]
     pilot_answers = inquirer.prompt(ques_pilot)
     selected_pilot_id = pilot_answers['pilot_id']
+    pilot_id_pattern = r"^PR(10[1-9]|1[1-9][0-9]|[2-9][0-9]{2,})$"
+    if not re.match(pilot_id_pattern, selected_pilot_id):
+        print("Enter the pilot id according to given format")
+        return
+    
     query_flights = """
         SELECT 
         f.flight_id,
@@ -185,6 +197,10 @@ def update_sch(cur, con):
     ]
     flight_answers = inquirer.prompt(ques_flight)
     selected_flight_id = flight_answers['flight_id']
+    flight_id_pattern = r"^VR(10[1-9]|1[1-9][0-9]|[2-9][0-9]{2,})$"
+    if not re.match(flight_id_pattern, selected_flight_id):
+        print("Enter the flight id according to given format")
+        return
 
     fields = [
             "arr_date", "dep_date", "arr_time", "dep_time",
