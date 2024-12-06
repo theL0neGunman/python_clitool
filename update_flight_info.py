@@ -121,7 +121,6 @@ def update_loc(cur, con):
 
 def update_sch(cur, con):
     print("Showing full schedule of pilots...")
-    print("Showing full schedule...")
     query_for_schedule = """
         SELECT 
         f.flight_id,
