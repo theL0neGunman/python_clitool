@@ -3,7 +3,7 @@ import inquirer
 import tabulate
 import sys
 import sqlite3
-
+from utils import get_full_schedule
 
 def update_dest(cur, con):
     print("Fetching pilot details")
@@ -120,7 +120,116 @@ def update_loc(cur, con):
         print(f"An error occurred while updating the From Location: {e}")
 
 def update_sch(cur, con):
-    return 0
+    print("Showing full schedule of pilots...")
+    print("Showing full schedule...")
+    query_for_schedule = """
+        SELECT 
+        f.flight_id,
+        f.flight_name,
+        p.pilot_id,
+        p.pilot_name,
+        d.destination_id,
+        d.dep_time,
+        d.arr_time,
+        d.dep_date || ' to ' || d.arr_date AS dep_arr_date,
+        d.from_loc,
+        d.to_loc,
+        s.status
+    FROM schedule AS s
+    JOIN flight AS f ON s.flight_id = f.flight_id
+    JOIN pilot AS p ON s.pilot_id = p.pilot_id
+    JOIN destination AS d ON f.flight_id = d.flight_id;
+    """
+    cur.execute(query_for_schedule)
+    schedule_data = cur.fetchall()
+
+    if not schedule_data:
+        print("No schedule data found.")
+        return
+    else:
+        headers_schedule = [
+            "Flight Id", "Flight Name", "Pilot Id", "Pilot Name",
+            "Destination ID", "Dep Time", "Arr Time", "Dep to Arr Date", 
+            "From Location", "To Location", "Status"
+        ]
+
+        print(tabulate.tabulate(schedule_data, headers=headers_schedule, tablefmt="grid"))
+    ques_pilot = [
+            inquirer.Text('pilot_id', message="Enter the pilot ID")
+        ]
+    pilot_answers = inquirer.prompt(ques_pilot)
+    selected_pilot_id = pilot_answers['pilot_id']
+    query_flights = """
+        SELECT 
+        f.flight_id,
+        f.flight_name,
+        s.pilot_id,
+        d.to_loc,
+        s.status
+        FROM flight AS f
+        JOIN schedule AS s ON f.flight_id = s.flight_id
+        JOIN destination AS d ON f.flight_id = d.flight_id
+        WHERE s.pilot_id = ?;
+        """
+    cur.execute(query_flights, (selected_pilot_id,))
+    flight_data = cur.fetchall()
+
+    if not flight_data:
+        print(f"No flights found for pilot ID {selected_pilot_id}.")
+        return
+
+    headers_flight = ["Flight Id", "Flight Name", "Pilot Id", "To ", "Status"]
+    print(tabulate.tabulate(flight_data, headers=headers_flight, tablefmt="grid"))
+
+    ques_flight = [
+        inquirer.Text('flight_id', message="Enter the flight ID to modify from the above list")
+    ]
+    flight_answers = inquirer.prompt(ques_flight)
+    selected_flight_id = flight_answers['flight_id']
+
+    fields = [
+            "arr_date", "dep_date", "arr_time", "dep_time",
+            "from_loc", "to_loc", "flight_name", "status"
+        ]
+
+    ques_field = [
+        inquirer.List(
+                'field',
+                message="Which field would you like to update?",
+                choices=fields
+            ),
+        inquirer.Text('new_value', message="Enter the new value for the selected field")
+        ]
+    field_answers = inquirer.prompt(ques_field)
+    selected_field = field_answers['field']
+    new_value = field_answers['new_value']
+
+    if selected_field in ["arr_date", "dep_date", "arr_time", "dep_time", "from_loc", "to_loc"]:
+            query_update = f"""
+            UPDATE destination
+            SET {selected_field} = ?
+            WHERE flight_id = ?;
+            """
+    elif selected_field == 'status':
+        query_update = """UPDATE schedule SET status = ? WHERE flight_id = ?"""
+    elif selected_field == "flight_name":
+            # Update the flight table
+            query_update = """
+            UPDATE flight
+            SET flight_name = ?
+            WHERE flight_id = ?;
+            """
+    else:
+        print("Invalid field selected.")
+        return
+
+    try:
+        cur.execute(query_update, (new_value, selected_flight_id))
+        con.commit()
+        print(f"Successfully updated {selected_field} to '{new_value}' for flight ID {selected_flight_id}.")
+
+    except sqlite3.Error as e:
+        print(f"An error occurred: {e}")
 
 
 def flight_info_updation(con):

@@ -7,7 +7,7 @@ import inquirer
 from pyfiglet import Figlet
 from add_flight import flight_addition
 from view_flights import flight_viewing
-from view_schedule import pilot_schedule
+from view_schedule import view_pilot_schedule
 from update_flight_info import flight_info_updation
 from delete_func import delete_flight
 
@@ -55,7 +55,7 @@ def main():
         elif option == 'c':
             flight_info_updation(db_connect)
         elif option == "d":
-            pilot_schedule(db_connect)
+            view_pilot_schedule(db_connect)
         elif option == 'e':
             delete_flight(db_connect)
         elif option == "f":

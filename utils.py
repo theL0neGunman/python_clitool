@@ -1,4 +1,5 @@
 import re
+import tabulate
 
 def fetch_data_single(table_name, column_name, cur):
     cur.execute(f"SELECT {column_name} FROM {table_name}")
@@ -56,3 +57,41 @@ def destination_table_validation(destination_id,dep_time, arr_time,dep_date,arr_
         sub_errname = f"Flight ID {destination_id} already exists. Please choose another ID."
         is_valid = False
     return is_valid, sub_errname
+
+
+
+
+
+def get_full_schedule(cur):
+    print("Showing full schedule...")
+    query_for_schedule = """
+        SELECT 
+        f.flight_id,
+        f.flight_name,
+        p.pilot_id,
+        p.pilot_name,
+        d.destination_id,
+        d.dep_time,
+        d.arr_time,
+        d.dep_date || ' to ' || d.arr_date AS dep_arr_date,
+        d.from_loc,
+        d.to_loc,
+        s.status
+    FROM schedule AS s
+    JOIN flight AS f ON s.flight_id = f.flight_id
+    JOIN pilot AS p ON s.pilot_id = p.pilot_id
+    JOIN destination AS d ON f.flight_id = d.flight_id;
+    """
+    cur.execute(query_for_schedule)
+    schedule_data = cur.fetchall()
+
+    if not schedule_data:
+        print("No schedule data found.")
+    else:
+        headers_schedule = [
+            "Flight Id", "Flight Name", "Pilot Id", "Pilot Name",
+            "Destination ID", "Dep Time", "Arr Time", "Dep to Arr Date", 
+            "From Location", "To Location", "Status"
+        ]
+
+        print(tabulate.tabulate(schedule_data, headers=headers_schedule, tablefmt="grid"))
