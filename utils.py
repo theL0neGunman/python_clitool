@@ -49,7 +49,7 @@ def destination_table_validation(destination_id,dep_time, arr_time,dep_date,arr_
         is_valid = False
     elif not re.match(time_pattern, arr_time) or not re.match(time_pattern, dep_time):
         is_valid = False
-        sub_errname = "Time should be in the format of HH:MM:SS AM/PM"
+        sub_errname = "Time should be in the format of HH:MM:SS am/pm"
     elif not re.match(date_pattern, dep_date) or not re.match(date_pattern, arr_date):
         is_valid =False
         sub_errname = "Date should be in the format of YYYY-MM-DD"

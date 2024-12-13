@@ -1,6 +1,7 @@
 import tabulate
 import sqlite3
 import inquirer
+import re
 
 
 def delete_flight(con):
@@ -38,11 +39,14 @@ def delete_flight(con):
         ]
         print(tabulate.tabulate(schedule_data, headers=headers_schedule, tablefmt="grid"))
         ques_pilot = [
-            inquirer.Text('pilot_id', message="Enter the pilot ID")
+            inquirer.Text('pilot_id', message="Enter the pilot Id (PR101, PR102, etc.)")
         ]
         pilot_answers = inquirer.prompt(ques_pilot)
         selected_pilot_id = pilot_answers['pilot_id']
-
+        pilot_id_pattern = r"^PR(10[1-9]|1[1-9][0-9]|[2-9][0-9]{2,})$"
+        if not re.match(pilot_id_pattern, selected_pilot_id):
+            print("Enter the pilot id according to given format")
+            return
         query_flights = """
         SELECT 
             f.flight_id,
@@ -67,10 +71,14 @@ def delete_flight(con):
         print(tabulate.tabulate(flight_data, headers=headers_flight, tablefmt="grid"))
 
         ques_flight = [
-            inquirer.Text('flight_id', message="Enter the flight ID to delete from the above list")
+            inquirer.Text('flight_id', message="Enter the flight Id to delete from the above list")
         ]
         flight_answers = inquirer.prompt(ques_flight)
         selected_flight_id = flight_answers['flight_id']
+        flight_id_pattern = r"^VR(10[1-9]|1[1-9][0-9]|[2-9][0-9]{2,})$"
+        if not re.match(flight_id_pattern, selected_flight_id):
+            print("Enter the flight id according to given format")
+            return
         ques_confirm = [
             inquirer.Confirm('confirm_delete', message=f"Are you sure you want to delete the flight rought with Id {selected_flight_id}?", default=False)
         ]
